@@ -167,7 +167,7 @@ private:
 
 	bool bIsCursorInitiallyVisible = false;
 
-	bool bShareKeyboard = false;
+	bool bShareKeyboard = true;
 
 	bool bRefreshDPIScale = false;
 
