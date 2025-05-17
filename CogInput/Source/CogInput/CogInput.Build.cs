@@ -28,6 +28,8 @@ public class CogInput : ModuleRules
                 "Cog",
                 "EnhancedInput",
                 "InputCore",
+                
+                "FDLibSDL3"
             }
             );
 			

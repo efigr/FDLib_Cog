@@ -7,6 +7,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "imgui_internal.h"
 #include "InputMappingContext.h"
+#include "Inputs/SDL_InputHelper.h"
 
 //--------------------------------------------------------------------------------------------------------------------------
 void FCogInputWindow_Gamepad::Initialize()
@@ -16,33 +17,34 @@ void FCogInputWindow_Gamepad::Initialize()
     bUseCustomContextMenu = true;
 
     Config = GetConfig<UCogInputConfig_Gamepad>();
-
-    Actions.FindOrAdd(EKeys::Gamepad_Left2D);
-    Actions.FindOrAdd(EKeys::Gamepad_LeftX);
-    Actions.FindOrAdd(EKeys::Gamepad_LeftY);
-    Actions.FindOrAdd(EKeys::Gamepad_Right2D);
-    Actions.FindOrAdd(EKeys::Gamepad_RightX);
-    Actions.FindOrAdd(EKeys::Gamepad_RightY);
-    Actions.FindOrAdd(EKeys::Gamepad_LeftTriggerAxis);
-    Actions.FindOrAdd(EKeys::Gamepad_RightTriggerAxis);
-    Actions.FindOrAdd(EKeys::Gamepad_LeftThumbstick);
-    Actions.FindOrAdd(EKeys::Gamepad_RightThumbstick);
-    Actions.FindOrAdd(EKeys::Gamepad_Special_Left);
-    Actions.FindOrAdd(EKeys::Gamepad_Special_Left_X);
-    Actions.FindOrAdd(EKeys::Gamepad_Special_Left_Y);
-    Actions.FindOrAdd(EKeys::Gamepad_Special_Right);
-    Actions.FindOrAdd(EKeys::Gamepad_FaceButton_Bottom);
-    Actions.FindOrAdd(EKeys::Gamepad_FaceButton_Right);
-    Actions.FindOrAdd(EKeys::Gamepad_FaceButton_Left);
-    Actions.FindOrAdd(EKeys::Gamepad_FaceButton_Top);
-    Actions.FindOrAdd(EKeys::Gamepad_LeftShoulder);
-    Actions.FindOrAdd(EKeys::Gamepad_RightShoulder);
+    
+    Actions.FindOrAdd(SDL_GamepadEvents::Axis_Left_2D);
+    Actions.FindOrAdd(SDL_GamepadEvents::Axis_LeftX);
+    Actions.FindOrAdd(SDL_GamepadEvents::Axis_LeftY);
+    Actions.FindOrAdd(SDL_GamepadEvents::Axis_Right_2D);
+    Actions.FindOrAdd(SDL_GamepadEvents::Axis_RightX);
+    Actions.FindOrAdd(SDL_GamepadEvents::Axis_RightY);
+    Actions.FindOrAdd(SDL_GamepadEvents::Axis_LeftTrigger);
+    Actions.FindOrAdd(SDL_GamepadEvents::Axis_RightTrigger);
+    Actions.FindOrAdd(SDL_GamepadEvents::LeftThumb);
+    Actions.FindOrAdd(SDL_GamepadEvents::RightThumb);
+    Actions.FindOrAdd(SDL_GamepadEvents::GamepadBack);
+    Actions.FindOrAdd(SDL_GamepadEvents::GamepadStart);
+    Actions.FindOrAdd(SDL_GamepadEvents::GamepadA);
+    Actions.FindOrAdd(SDL_GamepadEvents::GamepadB);
+    Actions.FindOrAdd(SDL_GamepadEvents::GamepadX);
+    Actions.FindOrAdd(SDL_GamepadEvents::GamepadY);
+    Actions.FindOrAdd(SDL_GamepadEvents::LeftShoulder);
+    Actions.FindOrAdd(SDL_GamepadEvents::RightShoulder);
+    Actions.FindOrAdd(SDL_GamepadEvents::DPadUp);
+    Actions.FindOrAdd(SDL_GamepadEvents::DPadDown);
+    Actions.FindOrAdd(SDL_GamepadEvents::DPadRight);
+    Actions.FindOrAdd(SDL_GamepadEvents::DPadLeft);
+    
     Actions.FindOrAdd(EKeys::Gamepad_LeftTrigger);
     Actions.FindOrAdd(EKeys::Gamepad_RightTrigger);
-    Actions.FindOrAdd(EKeys::Gamepad_DPad_Up);
-    Actions.FindOrAdd(EKeys::Gamepad_DPad_Down);
-    Actions.FindOrAdd(EKeys::Gamepad_DPad_Right);
-    Actions.FindOrAdd(EKeys::Gamepad_DPad_Left);
+    Actions.FindOrAdd(EKeys::Gamepad_Special_Left_X);
+    Actions.FindOrAdd(EKeys::Gamepad_Special_Left_Y);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -395,14 +397,14 @@ void FCogInputWindow_Gamepad::RenderContent()
     //------------------------------
     // Triggers
     //------------------------------
-    RenderButton(EKeys::Gamepad_LeftTriggerAxis, ImVec2(0.18f, 0.12f), TriggerButtonSize, ImVec2(0.5f, 1.0f), TriggerRound, ImDrawFlags_RoundCornersTop);
-    RenderButton(EKeys::Gamepad_RightTriggerAxis, ImVec2(1.f - 0.18f, 0.12f), TriggerButtonSize, ImVec2(0.5f, 1.0f), TriggerRound, ImDrawFlags_RoundCornersTop);
+    RenderButton(SDL_GamepadEvents::Axis_LeftTrigger, ImVec2(0.18f, 0.12f), TriggerButtonSize, ImVec2(0.5f, 1.0f), TriggerRound, ImDrawFlags_RoundCornersTop);
+    RenderButton(SDL_GamepadEvents::Axis_RightTrigger, ImVec2(1.f - 0.18f, 0.12f), TriggerButtonSize, ImVec2(0.5f, 1.0f), TriggerRound, ImDrawFlags_RoundCornersTop);
 
     //------------------------------
     // Shoulders
     //------------------------------
-    RenderButton(EKeys::Gamepad_LeftShoulder, ImVec2(0.18f, 0.15f), BumperButtonSize, ImVec2(0.5f, 0.5f), BumperRound, ImDrawFlags_RoundCornersTop);
-    RenderButton(EKeys::Gamepad_RightShoulder, ImVec2(1.f - 0.18f, 0.15f), BumperButtonSize, ImVec2(0.5f, 0.5f), BumperRound, ImDrawFlags_RoundCornersTop);
+    RenderButton(SDL_GamepadEvents::LeftShoulder, ImVec2(0.18f, 0.15f), BumperButtonSize, ImVec2(0.5f, 0.5f), BumperRound, ImDrawFlags_RoundCornersTop);
+    RenderButton(SDL_GamepadEvents::RightShoulder, ImVec2(1.f - 0.18f, 0.15f), BumperButtonSize, ImVec2(0.5f, 0.5f), BumperRound, ImDrawFlags_RoundCornersTop);
 
     //------------------------------
     // Gamepad
@@ -427,32 +429,32 @@ void FCogInputWindow_Gamepad::RenderContent()
     //------------------------------
     // Sticks
     //------------------------------
-    RenderStick(EKeys::Gamepad_Left2D, EKeys::Gamepad_LeftThumbstick, Config->bInvertLeftStickY, Config->LeftStickSensitivity,  StickAmplitude, LS_Pos, StickRadius);
-    RenderStick(EKeys::Gamepad_Right2D, EKeys::Gamepad_RightThumbstick, Config->bInvertRightStickY, Config->RightStickSensitivity, StickAmplitude, RS_Pos, StickRadius);
+    RenderStick(SDL_GamepadEvents::Axis_Left_2D, SDL_GamepadEvents::LeftThumb, Config->bInvertLeftStickY, Config->LeftStickSensitivity,  StickAmplitude, LS_Pos, StickRadius);
+    RenderStick(SDL_GamepadEvents::Axis_Right_2D, SDL_GamepadEvents::RightThumb, Config->bInvertRightStickY, Config->RightStickSensitivity, StickAmplitude, RS_Pos, StickRadius);
 
     //------------------------------
     // DPad Buttons
     //------------------------------
     constexpr ImVec2 DPad_Pos(0.15f, 0.44f);
-    RenderButton(EKeys::Gamepad_DPad_Up,      DPad_Pos + ImVec2(0.0f, -DPadButtonDistance / AspectRatio), DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
-    RenderButton(EKeys::Gamepad_DPad_Down,    DPad_Pos + ImVec2(0.0f, DPadButtonDistance / AspectRatio),  DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
-    RenderButton(EKeys::Gamepad_DPad_Left,    DPad_Pos + ImVec2(-DPadButtonDistance, 0.0f), DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
-    RenderButton(EKeys::Gamepad_DPad_Right,   DPad_Pos + ImVec2(DPadButtonDistance, 0.0f),  DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
+    RenderButton(SDL_GamepadEvents::DPadUp,      DPad_Pos + ImVec2(0.0f, -DPadButtonDistance / AspectRatio), DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
+    RenderButton(SDL_GamepadEvents::DPadDown,    DPad_Pos + ImVec2(0.0f, DPadButtonDistance / AspectRatio),  DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
+    RenderButton(SDL_GamepadEvents::DPadRight,    DPad_Pos + ImVec2(-DPadButtonDistance, 0.0f), DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
+    RenderButton(SDL_GamepadEvents::DPadLeft,   DPad_Pos + ImVec2(DPadButtonDistance, 0.0f),  DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
 
     //------------------------------
     // Face Buttons
     //------------------------------
     constexpr ImVec2 Face_Pos(1.0f - 0.15f, 0.44f);
-    RenderButton(EKeys::Gamepad_FaceButton_Top,       Face_Pos + ImVec2(0.0f, -DPadButtonDistance / AspectRatio), DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
-    RenderButton(EKeys::Gamepad_FaceButton_Bottom,    Face_Pos + ImVec2(0.0f, DPadButtonDistance / AspectRatio),  DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
-    RenderButton(EKeys::Gamepad_FaceButton_Left,      Face_Pos + ImVec2(-DPadButtonDistance, 0.0f), DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
-    RenderButton(EKeys::Gamepad_FaceButton_Right,     Face_Pos + ImVec2(DPadButtonDistance, 0.0f),  DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
+    RenderButton(SDL_GamepadEvents::GamepadY,       Face_Pos + ImVec2(0.0f, -DPadButtonDistance / AspectRatio), DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
+    RenderButton(SDL_GamepadEvents::GamepadA,    Face_Pos + ImVec2(0.0f, DPadButtonDistance / AspectRatio),  DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
+    RenderButton(SDL_GamepadEvents::GamepadX,      Face_Pos + ImVec2(-DPadButtonDistance, 0.0f), DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
+    RenderButton(SDL_GamepadEvents::GamepadB,     Face_Pos + ImVec2(DPadButtonDistance, 0.0f),  DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
 
     //------------------------------
     // Special Buttons
     //------------------------------
-    RenderButton(EKeys::Gamepad_Special_Left,  ImVec2(0.5f - SpecialButtonDistance * 0.5f, 0.35f), SpecialButtonSize, ImVec2(0.5f, 0.5f), SpecialButtonRound);
-    RenderButton(EKeys::Gamepad_Special_Right, ImVec2(0.5f + SpecialButtonDistance * 0.5f, 0.35f), SpecialButtonSize, ImVec2(0.5f, 0.5f), SpecialButtonRound);
+    RenderButton(SDL_GamepadEvents::GamepadBack,  ImVec2(0.5f - SpecialButtonDistance * 0.5f, 0.35f), SpecialButtonSize, ImVec2(0.5f, 0.5f), SpecialButtonRound);
+    RenderButton(SDL_GamepadEvents::GamepadStart, ImVec2(0.5f + SpecialButtonDistance * 0.5f, 0.35f), SpecialButtonSize, ImVec2(0.5f, 0.5f), SpecialButtonRound);
 
     //DrawList->PopClipRect();
 }
