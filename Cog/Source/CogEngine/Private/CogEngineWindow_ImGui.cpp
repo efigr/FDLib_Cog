@@ -45,5 +45,5 @@ void FCogEngineWindow_ImGui::RenderContent()
     ImGui::MenuItem("ImGui Metric", nullptr, &bShowImguiMetric);
     ImGui::MenuItem("ImGui Debug Log", nullptr, &bShowImguiDebugLog);
     ImGui::MenuItem("ImGui Style Editor", nullptr, &bShowImguiStyleEditor);
-    // ImGui::MenuItem("Plot Demo", "", &bShowImguiPlot);
+    ImGui::MenuItem("Plot Demo", "", &bShowImguiPlot);
 }
