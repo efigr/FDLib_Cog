@@ -9,6 +9,7 @@
 #include "CogWindow_Spacing.h"
 #include "CogConsoleCommandManager.h"
 #include "CogDebugPluginSubsystem.h"
+#include "CogDebugSubsystem.h"
 #include "CogHelper.h"
 #include "CogWidgets.h"
 #include "Engine/Engine.h"

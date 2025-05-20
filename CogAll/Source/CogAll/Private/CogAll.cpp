@@ -105,7 +105,7 @@ void Cog::AddAllWindows(UCogSubsystem& CogWindowManager)
     //---------------------------------------
     // Abilities
     //---------------------------------------
-    /*CogWindowManager.AddWindow<FCogAbilityWindow_Abilities>("Gameplay.Abilities");
+    CogWindowManager.AddWindow<FCogAbilityWindow_Abilities>("Gameplay.Abilities");
 
     CogWindowManager.AddWindow<FCogAbilityWindow_Attributes>("Gameplay.Attributes");
 
@@ -121,7 +121,7 @@ void Cog::AddAllWindows(UCogSubsystem& CogWindowManager)
 
     CogWindowManager.AddWindow<FCogAbilityWindow_Tasks>("Gameplay.Tasks");
 
-    CogWindowManager.AddWindow<FCogAbilityWindow_Tweaks>("Gameplay.Tweaks");*/
+    CogWindowManager.AddWindow<FCogAbilityWindow_Tweaks>("Gameplay.Tweaks");
 
     //---------------------------------------
     // AI
