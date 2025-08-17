@@ -30,10 +30,10 @@ void FCogInputWindow_Gamepad::Initialize()
     Actions.FindOrAdd(SDL_GamepadEvents::RightThumb);
     Actions.FindOrAdd(SDL_GamepadEvents::GamepadBack);
     Actions.FindOrAdd(SDL_GamepadEvents::GamepadStart);
-    Actions.FindOrAdd(SDL_GamepadEvents::GamepadA);
-    Actions.FindOrAdd(SDL_GamepadEvents::GamepadB);
-    Actions.FindOrAdd(SDL_GamepadEvents::GamepadX);
-    Actions.FindOrAdd(SDL_GamepadEvents::GamepadY);
+    Actions.FindOrAdd(SDL_GamepadEvents::GamepadFaceSouth);
+    Actions.FindOrAdd(SDL_GamepadEvents::GamepadFaceEast);
+    Actions.FindOrAdd(SDL_GamepadEvents::GamepadFaceWest);
+    Actions.FindOrAdd(SDL_GamepadEvents::GamepadFaceNorth);
     Actions.FindOrAdd(SDL_GamepadEvents::LeftShoulder);
     Actions.FindOrAdd(SDL_GamepadEvents::RightShoulder);
     Actions.FindOrAdd(SDL_GamepadEvents::DPadUp);
@@ -445,10 +445,10 @@ void FCogInputWindow_Gamepad::RenderContent()
     // Face Buttons
     //------------------------------
     constexpr ImVec2 Face_Pos(1.0f - 0.15f, 0.44f);
-    RenderButton(SDL_GamepadEvents::GamepadY,       Face_Pos + ImVec2(0.0f, -DPadButtonDistance / AspectRatio), DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
-    RenderButton(SDL_GamepadEvents::GamepadA,    Face_Pos + ImVec2(0.0f, DPadButtonDistance / AspectRatio),  DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
-    RenderButton(SDL_GamepadEvents::GamepadX,      Face_Pos + ImVec2(-DPadButtonDistance, 0.0f), DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
-    RenderButton(SDL_GamepadEvents::GamepadB,     Face_Pos + ImVec2(DPadButtonDistance, 0.0f),  DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
+    RenderButton(SDL_GamepadEvents::GamepadFaceNorth,       Face_Pos + ImVec2(0.0f, -DPadButtonDistance / AspectRatio), DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
+    RenderButton(SDL_GamepadEvents::GamepadFaceSouth,    Face_Pos + ImVec2(0.0f, DPadButtonDistance / AspectRatio),  DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
+    RenderButton(SDL_GamepadEvents::GamepadFaceWest,      Face_Pos + ImVec2(-DPadButtonDistance, 0.0f), DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
+    RenderButton(SDL_GamepadEvents::GamepadFaceEast,     Face_Pos + ImVec2(DPadButtonDistance, 0.0f),  DPadButtonSize, ImVec2(0.5f, 0.5f), DPadButtonRounding);
 
     //------------------------------
     // Special Buttons
