@@ -4,19 +4,34 @@
 #include "Components/LineBatchComponent.h"
 #include "Components/BoxComponent.h"
 #include "DrawDebugHelpers.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/OverlapResult.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/SkeletalBodySetup.h"
 #include "PhysicsEngine/SphylElem.h"
 #include "Runtime/Experimental/Chaos/Private/Chaos/PhysicsObjectInternal.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 namespace 
 {
     //----------------------------------------------------------------------------------------------------------------------
     ULineBatchComponent* GetDebugLineBatcher(const UWorld* InWorld, const bool bPersistentLines, const float LifeTime, const bool bDepthIsForeground)
     {
-        return (InWorld ? (bDepthIsForeground ? InWorld->ForegroundLineBatcher : ((bPersistentLines || (LifeTime > 0.f)) ? InWorld->PersistentLineBatcher : InWorld->LineBatcher)) : nullptr);
+        #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 6
+            if (InWorld == nullptr)
+            {
+                return nullptr;
+            }
+
+            bool persistent = bPersistentLines || (LifeTime > 0.f);
+            UWorld::ELineBatcherType batcherType = bDepthIsForeground ?
+                (persistent ? UWorld::ELineBatcherType::ForegroundPersistent : UWorld::ELineBatcherType::Foreground) :
+                (persistent ? UWorld::ELineBatcherType::WorldPersistent : UWorld::ELineBatcherType::World);
+            return InWorld->GetLineBatcher(batcherType);
+        #else
+            return (InWorld ? (bDepthIsForeground ? InWorld->ForegroundLineBatcher : ((bPersistentLines || (LifeTime > 0.f)) ? InWorld->PersistentLineBatcher : InWorld->LineBatcher)) : nullptr);
+        #endif
     }
 
     //----------------------------------------------------------------------------------------------------------------------

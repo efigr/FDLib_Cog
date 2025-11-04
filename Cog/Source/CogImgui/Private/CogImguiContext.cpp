@@ -22,11 +22,12 @@
 #include "TextureResource.h"
 #include "Widgets/SViewport.h"
 #include "Widgets/SWindow.h"
+#include "CogLocalizationConfig.h"
 
 //--------------------------------------------------------------------------------------------------------------------------
 FCogImGuiContextScope::FCogImGuiContextScope(const FCogImguiContext& CogImguiContext)
 {
-    PrevContext = ImGui::GetCurrentContext();
+    PrevImGuiContext = ImGui::GetCurrentContext();
     PrevPlotContext = ImPlot::GetCurrentContext();
 
     ImGui::SetCurrentContext(CogImguiContext.Context);
@@ -36,7 +37,7 @@ FCogImGuiContextScope::FCogImGuiContextScope(const FCogImguiContext& CogImguiCon
 //--------------------------------------------------------------------------------------------------------------------------
 FCogImGuiContextScope::FCogImGuiContextScope(ImGuiContext* GuiCtx, ImPlotContext* PlotCtx)
 {
-    PrevContext = ImGui::GetCurrentContext();
+    PrevImGuiContext = ImGui::GetCurrentContext();
     PrevPlotContext = ImPlot::GetCurrentContext();
 
     ImGui::SetCurrentContext(GuiCtx);
@@ -46,8 +47,15 @@ FCogImGuiContextScope::FCogImGuiContextScope(ImGuiContext* GuiCtx, ImPlotContext
 //--------------------------------------------------------------------------------------------------------------------------
 FCogImGuiContextScope::~FCogImGuiContextScope()
 {
-    ImGui::SetCurrentContext(PrevContext);
+    ImGui::SetCurrentContext(PrevImGuiContext);
     ImPlot::SetCurrentContext(PrevPlotContext);
+}
+
+//--------------------------------------------------------------------------------------------------------------------------
+void FCogImGuiContextScope::ClearPreviousContexts()
+{
+    PrevImGuiContext = nullptr;
+    PrevPlotContext = nullptr;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -60,6 +68,13 @@ void FCogImguiContext::Initialize(UGameViewportClient* InGameViewport)
 
     GameViewport = InGameViewport;
 
+    // ImGui Context must be created before creating widgets as widgets can receive events that uses the ImGui context right away.
+    Context = ImGui::CreateContext();
+    PlotContext = ImPlot::CreateContext();
+    ImGui::SetCurrentContext(Context);
+    ImPlot::SetImGuiContext(Context);
+    ImPlot::SetCurrentContext(PlotContext);
+
     if (GameViewport != nullptr)
     {
         SAssignNew(MainWidget, SCogImguiWidget).Context(this);
@@ -68,12 +83,6 @@ void FCogImguiContext::Initialize(UGameViewportClient* InGameViewport)
         SAssignNew(InputCatcherWidget, SCogImguiInputCatcherWidget).Context(this);
         GameViewport->AddViewportWidgetContent(InputCatcherWidget.ToSharedRef(), -TNumericLimits<int32>::Max());
     }
-
-    Context = ImGui::CreateContext();
-    PlotContext = ImPlot::CreateContext();
-    ImGui::SetCurrentContext(Context);
-    ImPlot::SetImGuiContext(Context);
-    ImPlot::SetCurrentContext(PlotContext);
 
     ImGuiIO& IO = ImGui::GetIO();
     IO.UserData = this;
@@ -193,28 +202,51 @@ void FCogImguiContext::Shutdown()
         GameViewport->RemoveViewportWidgetContent(InputCatcherWidget.ToSharedRef());
     }
 
-    if (PlotContext)
+    //Make sure ImGuiContextScope does not contain dangling pointer as we will destroy the contexts.
+    ImGuiContextScope.ClearPreviousContexts();
+
+    if (PlotContext != nullptr)
     {
         ImPlot::DestroyContext(PlotContext);
         PlotContext = nullptr;
     }
 
-    if (Context)
+    if (Context != nullptr)
     {
+        // Prevent triggering the saving of ImGui config. This is done manually by calling SaveSettings.
+        Context->IO.IniFilename = nullptr;
+        
         ImGui::DestroyContext(Context);
         Context = nullptr;
     }
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
+void FCogImguiContext::SaveSettings() const
+{
+    if (Context && Context->SettingsLoaded && Context->IO.IniFilename != nullptr)
+    {
+        ImGui::SaveIniSettingsToDisk(Context->IO.IniFilename);
+    }
+}
+
+//--------------------------------------------------------------------------------------------------------------------------
 void FCogImguiContext::OnImGuiWidgetFocusLost()
 {
-    FCogImGuiContextScope ImGuiContextScope(Context, PlotContext);
+    if (bEnableInput == false)
+    { return; }
+    
+    if (GameViewport == nullptr)
+    { return; }
 
-    if (bEnableInput && GameViewport->GetGameViewportWidget()->HasUserFocus(0))
-    {
-        bRetakeFocus = true;
-    }
+    const SViewport* ViewportWidget = GameViewport->GetGameViewportWidget().Get();
+    if (ViewportWidget == nullptr)
+    { return; }
+    
+    if (!ViewportWidget->HasUserFocus(0))
+    { return; }
+
+    bRetakeFocus = true;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -743,6 +775,7 @@ void FCogImguiContext::SetEnableInput(const bool InValue)
         if (bIsThrottleDisabled)
         {
             FSlateThrottleManager::Get().DisableThrottle(false);
+            bIsThrottleDisabled = false;
         }
         
         if (ULocalPlayer* LocalPlayer = GetLocalPlayer())
@@ -832,6 +865,13 @@ void FCogImguiContext::SetDPIScale(float Value)
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
+void FCogImguiContext::SetFont(FString Value)
+{
+    Font = Value;
+    bRefreshDPIScale = true;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------
 void FCogImguiContext::BuildFont()
 {
     FCogImGuiContextScope ImGuiContextScope(Context, PlotContext);
@@ -847,8 +887,23 @@ void FCogImguiContext::BuildFont()
 
     ImFontConfig FontConfig;
     FontConfig.SizePixels = FMath::RoundFromZero(13.f * DpiScale);
-    IO.Fonts->AddFontDefault(&FontConfig);
-
+	
+    // if engine's font file exist, use it as truetype font, else use fallback one
+    if (FPaths::FileExists(Font))
+    {
+        // support chinese if needed
+#if COG_SUPPORT_CHINESE
+        const ImWchar* glyphRange = IO.Fonts->GetGlyphRangesChineseFull();
+#else
+        const ImWchar* glyphRange = IO.Fonts->GetGlyphRangesDefault();
+#endif
+        IO.Fonts->AddFontFromFileTTF(TCHAR_TO_UTF8(*Font), 16.f * DpiScale, nullptr, glyphRange);
+    }
+    else
+    {
+        IO.Fonts->AddFontDefault(&FontConfig);
+    }
+	
     uint8* TextureDataRaw;
     int32 TextureWidth, TextureHeight, BytesPerPixel;
     IO.Fonts->GetTexDataAsRGBA32(&TextureDataRaw, &TextureWidth, &TextureHeight, &BytesPerPixel);
@@ -866,10 +921,15 @@ void FCogImguiContext::BuildFont()
     FontAtlasTexture->AddressX = TA_Wrap;
     FontAtlasTexture->AddressY = TA_Wrap;
 
-    uint8* FontAtlasTextureData = static_cast<uint8*>(FontAtlasTexture->GetPlatformData()->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
-    FMemory::Memcpy(FontAtlasTextureData, TextureDataRaw, TextureWidth * TextureHeight * BytesPerPixel);
-    FontAtlasTexture->GetPlatformData()->Mips[0].BulkData.Unlock();
     FontAtlasTexture->UpdateResource();
+
+    FUpdateTextureRegion2D* TextureRegion = new FUpdateTextureRegion2D(0, 0, 0, 0, TextureWidth, TextureHeight);
+    auto DataCleanup = [](uint8* Data, const FUpdateTextureRegion2D* UpdateRegion)
+    {
+        delete UpdateRegion;
+    };
+    FontAtlasTexture->UpdateTextureRegions(0, 1u, TextureRegion, BytesPerPixel * TextureWidth, BytesPerPixel, TextureDataRaw, DataCleanup);
+    FlushRenderingCommands();
 
     IO.Fonts->SetTexID(FontAtlasTexture);
     FontAtlasTexturePtr.Reset(FontAtlasTexture);
@@ -911,7 +971,7 @@ void FCogImguiContext::DrawDebug() const
             Focus = KeyboardFocusedWidget->ToString();
         }
         static char Buffer[256] = "";
-        ImStrncpy(Buffer, TCHAR_TO_ANSI(*Focus), IM_ARRAYSIZE(Buffer));
+        ImStrncpy(Buffer, COG_TCHAR_TO_CHAR(*Focus), IM_ARRAYSIZE(Buffer));
         ImGui::InputText("Keyboard Focus", Buffer, IM_ARRAYSIZE(Buffer));
 
         ImGui::EndDisabled();

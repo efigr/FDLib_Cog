@@ -31,9 +31,10 @@ struct COGIMGUI_API FCogImGuiContextScope
 	UE_NODISCARD_CTOR explicit FCogImGuiContextScope(const FCogImguiContext& CogImguiContext);
 	UE_NODISCARD_CTOR explicit FCogImGuiContextScope(ImGuiContext* GuiCtx, ImPlotContext* PlotCtx);
 	~FCogImGuiContextScope();
+	void ClearPreviousContexts();
 
 private:
-	ImGuiContext* PrevContext = nullptr;
+	ImGuiContext* PrevImGuiContext = nullptr;
 	ImPlotContext* PrevPlotContext = nullptr;
 };
 
@@ -44,6 +45,8 @@ public:
 	void Initialize(UGameViewportClient* InGameViewport);
 
 	void Shutdown();
+
+	void SaveSettings() const;
 
 	bool GetEnableInput() const { return bEnableInput; }
 
@@ -76,6 +79,10 @@ public:
 	void SetSkipRendering(bool Value);
 
 	ImVec2 GetImguiMousePos() const;
+
+	FString GetFont() const { return Font; }
+
+	void SetFont(FString Value);
 
 	TObjectPtr<const UGameViewportClient> GetGameViewport() const { return GameViewport; }
 
@@ -182,6 +189,8 @@ private:
 	bool bSkipRendering = false;
 
 	bool bRetakeFocus = false;
+
+	FString Font;
 
 	static bool bIsNetImGuiInitialized;
 

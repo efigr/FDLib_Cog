@@ -30,9 +30,9 @@ struct COGDEBUG_API FCogDebug
     static bool IsReplicatedDebugActiveForObject(const UObject* WorldContextObject, const AActor* ServerSelection, bool IsServerFilteringBySelection);
 
     static AActor* GetSelection();
-    
+
     static void SetSelection(AActor* InValue);
-    
+
     static bool GetIsFilteringBySelection();
 
     static void SetIsFilteringBySelection(const UWorld* World, bool Value);
@@ -72,7 +72,7 @@ struct COGDEBUG_API FCogDebug
     static void GetDebugDrawSweepSettings(FCogDebugDrawSweepParams& Params);
 
     static FCogDebugContext& Get(int32 InPieId);
-    
+
     static FCogDebugContext& Get();
 
     static int32 GetPieSessionId();

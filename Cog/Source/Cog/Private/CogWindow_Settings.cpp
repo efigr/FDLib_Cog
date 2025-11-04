@@ -1,5 +1,6 @@
 #include "CogWindow_Settings.h"
 
+#include "CogCommon.h"
 #include "CogImguiHelper.h"
 #include "CogImguiInputHelper.h"
 #include "CogSubsystem.h"
@@ -36,6 +37,7 @@ void FCogWindow_Settings::Initialize()
     Context.SetShareKeyboard(Config->bShareKeyboard);
     Context.SetShareMouse(Config->bShareMouse);
     Context.SetShareMouseWithGameplay(Config->bShareMouseWithGameplay);
+    Context.SetFont(Config->Font);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -57,6 +59,7 @@ void FCogWindow_Settings::PreSaveConfig()
     Config->bShareKeyboard = Context.GetShareKeyboard();
     Config->bShareMouse = Context.GetShareMouse();
     Config->bShareMouseWithGameplay = Context.GetShareMouseWithGameplay();
+    Config->Font = Context.GetFont();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -215,7 +218,7 @@ void FCogWindow_Settings::RenderContent()
                 }
                 
                 ImGui::SameLine();
-                ImGui::Selectable(TCHAR_TO_ANSI(*Window->GetName()), false, ImGuiSelectableFlags_SpanAvailWidth);
+                ImGui::Selectable(COG_TCHAR_TO_CHAR(*Window->GetName()), false, ImGuiSelectableFlags_SpanAvailWidth);
                 {
                     Window->SetIsWidgetVisible(Visible);
                 }
@@ -241,6 +244,48 @@ void FCogWindow_Settings::RenderContent()
         ImGui::EndChild();
     }
     
+    //-------------------------------------------------------------------------------------------
+    if (ImGui::CollapsingHeader("Font", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+        FString FontDirectory = FPaths::EngineContentDir() / TEXT("Slate/Fonts");
+        if (PlatformFile.DirectoryExists(*FontDirectory))
+        {
+            static TArray<FString> FontPaths;
+            if (FontPaths.IsEmpty())
+            {
+                PlatformFile.FindFiles(FontPaths, *FontDirectory, TEXT(".ttf"));
+            }
+
+            if (ImGui::BeginChild("FontFiles", ImVec2(0, ImGui::GetFontSize() * 10), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeY))
+            {
+                {
+                    bool Selected = Context.GetFont().IsEmpty();
+                    if (ImGui::Checkbox("Default", &Selected))
+                    {
+                        Context.SetFont(FString());
+                    }
+                }
+
+                ImGui::Separator();
+
+                for (const FString& FontPath : FontPaths)
+                {
+                    bool Selected = Context.GetFont() == FontPath;
+                    FString FontName = FPaths::GetBaseFilename(FontPath, true);
+                    if (ImGui::Checkbox(COG_TCHAR_TO_CHAR(*FontName), &Selected))
+                    {
+                        Context.SetFont(FontPath);
+                    }
+                }
+            }
+
+            ImGui::EndChild();
+        }
+
+    }
+
     //-------------------------------------------------------------------------------------------
     if (ImGui::CollapsingHeader("Shortcuts", ImGuiTreeNodeFlags_DefaultOpen))
     {

@@ -7,6 +7,7 @@
 #include <Templates/SubclassOf.h>
 
 #include "CogHelper.h"
+#include "InputCoreTypes.h"
 
 class AActor;
 class APawn;
@@ -17,6 +18,7 @@ class UObject;
 enum class ECheckBoxState : uint8;
 enum ECollisionChannel : int;
 struct FKeyBind;
+struct FCogInputChord;
 
 using FCogWindowActorContextMenuFunction = TFunction<void(AActor& Actor)>;
 
@@ -102,7 +104,7 @@ public:
 
     static bool CheckBoxState(const char* Label, ECheckBoxState& State, bool ShowTooltip = true);
 
-    static bool InputChord(const char* Label, FInputChord& InInputChord);
+    static bool InputChord(const char* Label, FCogInputChord& InInputChord);
 
     static bool InputChord(FInputChord& InInputChord);
     

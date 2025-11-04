@@ -3,9 +3,12 @@
 #include "CoreMinimal.h"
 #include "CogHelper.h"
 #include "CogImguiContext.h"
+#include "CogInputChord.h"
 #include "CogWindow_Settings.h"
 #include "imgui.h"
-#include "Engine/GameInstance.h"
+#include "Components/InputComponent.h"
+#include "Subsystems/WorldSubsystem.h"
+
 #include "CogSubsystem.generated.h"
 
 class UCogCommonConfig;
@@ -22,25 +25,30 @@ struct FKey;
 
 //--------------------------------------------------------------------------------------------------------------------------
 UCLASS()
-class COG_API UCogSubsystem : public UGameInstanceSubsystem
+class COG_API UCogSubsystem : public UTickableWorldSubsystem
 {
     GENERATED_BODY()
 
 public:
+    virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 
-    virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+    virtual TStatId GetStatId() const override;
+
+    virtual void PostInitialize() override;
 
     virtual void Deinitialize() override;
 
-    void Activate();
-
-    virtual void SortMainMenu();
+    virtual void Tick(float DeltaTime) override;
 
     virtual void AddWindow(FCogWindow* Window, const FString& Name);
+    
+    virtual bool IsTickableWhenPaused() const { return true; }
 
     template<class T>
     T* AddWindow(const FString& Name);
-
+    
+    virtual void SortMainMenu();
+    
     virtual FCogWindow* FindWindowByID(ImGuiID ID);
 
     virtual void CloseAllWindows();
@@ -69,10 +77,10 @@ public:
     template<typename T> 
     T* GetAsset();
 
-    FInputActionHandlerSignature& AddShortcut(const UObject& InInstance, const FProperty& InProperty);
+    void AddShortcut(const UObject& InInstance, const FProperty& InProperty, const FSimpleDelegate& InDelegate);
 
     template<typename TCLass, typename TMember>
-    FInputActionHandlerSignature& AddShortcut(TCLass* InInstance,  TMember TCLass::*InPointerToMember);
+    void AddShortcut(TCLass* InInstance, TMember TCLass::* InPointerToMember, const FSimpleDelegate& InDelegate);
 
     void RebindShortcut(const UCogCommonConfig& InConfig, const FProperty& InProperty);
     
@@ -80,7 +88,7 @@ public:
 
     FCogImguiContext& GetContext() { return Context; }
 
-    bool IsRenderingMainMenu() const { return IsRenderingInMainMenu; }
+    bool IsRenderingMainMenu() const { return bIsRenderingInMainMenu; }
 
     static void AddCommand(UPlayerInput* PlayerInput, const FString& Command, const FKey& Key);
 
@@ -108,13 +116,11 @@ protected:
         
         FInputActionHandlerSignature Delegate;
 
-        FInputChord InputChord;
+        FCogInputChord InputChord;
     };
 
     virtual void Render(float DeltaTime);
 
-    virtual void Tick(UWorld* InTickedWorld, ELevelTick InTickType, float InDeltaTime);
-    
     virtual void TryInitialize(UWorld& World);
 
     virtual void UpdatePlayerControllers(UWorld& World);
@@ -214,13 +220,11 @@ protected:
     
     bool bIsInputEnabledBeforeEnteringSelectionMode = false;
 
-    bool bEnable = false;
-
     bool bIsSelectionModeActive = false;
 
-    bool IsInitialized = false;
+    bool bIsInitialized = false;
     
-    bool IsRenderingInMainMenu = false;
+    bool bIsRenderingInMainMenu = false;
     
     int32 NumExecBindingsChecked = 0;
 
@@ -253,16 +257,20 @@ T* UCogSubsystem::GetAsset()
 
 //--------------------------------------------------------------------------------------------------------------------------
 template <typename TCLass, typename TMember>
-FInputActionHandlerSignature& UCogSubsystem::AddShortcut(TCLass* InInstance, TMember TCLass::* InPointerToMember)
+void UCogSubsystem::AddShortcut(TCLass* InInstance, TMember TCLass::* InPointerToMember, const FSimpleDelegate& InDelegate)
 {
     if (InInstance == nullptr)
-    { return InvalidShortcutDelegate; }
+    {
+        return;
+    }
 
     const FProperty* Property = FCogHelper::FindProperty(InInstance, InPointerToMember);
     if (Property == nullptr)
-    { return InvalidShortcutDelegate; }
+    {
+        return;
+    }
 
-    return AddShortcut(*InInstance, *Property);
+    AddShortcut(*InInstance, *Property, InDelegate);
 }
 
 

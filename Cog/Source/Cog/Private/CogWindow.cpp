@@ -1,5 +1,6 @@
 #include "CogWindow.h"
 
+#include "CogCommon.h"
 #include "CogDebug.h"
 #include "CogWindow_Settings.h"
 #include "CogSubsystem.h"
@@ -41,7 +42,7 @@ void FCogWindow::SetFullName(const FString& InFullName)
 
     Title = Name;
 
-    ID = ImHashStr(TCHAR_TO_ANSI(*FullName));
+    ID = ImHashStr(COG_TCHAR_TO_CHAR(*FullName));
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -135,7 +136,6 @@ void FCogWindow::RenderHelp()
 //--------------------------------------------------------------------------------------------------------------------------
 void FCogWindow::RenderTick(float DeltaTime)
 {
-    SetSelection(FCogDebug::GetSelection());
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -146,10 +146,7 @@ void FCogWindow::GameTick(float DeltaTime)
 //--------------------------------------------------------------------------------------------------------------------------
 void FCogWindow::SetSelection(AActor* NewSelection)
 {
-    AActor* OldActor = GetSelection();
     FCogDebug::SetSelection(NewSelection);
-
-    OnSelectionChanged(OldActor, NewSelection);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------

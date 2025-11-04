@@ -1,5 +1,6 @@
 #include "CogDebugDrawImGui.h"
 
+#include "CogCommon.h"
 #include "imgui_internal.h"
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -26,7 +27,7 @@ void FCogDebugDrawImGui::AddLine(const ImVec2& P1, const ImVec2& P2, ImU32 Color
     Line.Time = Time;
     Line.Duration = Duration;
     Line.FadeColor = FadeColor;
-    Lines.Add_GetRef(Line);
+    Lines.Add(Line);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -41,7 +42,7 @@ void FCogDebugDrawImGui::AddRect(const ImVec2& Min, const ImVec2& Max, ImU32 Col
     Rectangle.Time = Time;
     Rectangle.Duration = Duration;
     Rectangle.FadeColor = FadeColor;
-    Rectangles.Add_GetRef(Rectangle);
+    Rectangles.Add(Rectangle);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -56,7 +57,7 @@ void FCogDebugDrawImGui::AddRectFilled(const ImVec2& Min, const ImVec2& Max, ImU
     Rectangle.Time = Time;
     Rectangle.Duration = Duration;
     Rectangle.FadeColor = FadeColor;
-    RectanglesFilled.Add_GetRef(Rectangle);
+    RectanglesFilled.Add(Rectangle);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -72,7 +73,7 @@ void FCogDebugDrawImGui::AddQuad(const ImVec2& P1, const ImVec2& P2, const ImVec
     Quad.Time = Time;
     Quad.Duration = Duration;
     Quad.FadeColor = FadeColor;
-    Quads.Add_GetRef(Quad);
+    Quads.Add(Quad);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -88,7 +89,7 @@ void FCogDebugDrawImGui::AddQuadFilled(const ImVec2& P1, const ImVec2& P2, const
     Quad.Time = Time;
     Quad.Duration = Duration;
     Quad.FadeColor = FadeColor;
-    QuadsFilled.Add_GetRef(Quad);
+    QuadsFilled.Add(Quad);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -103,7 +104,7 @@ void FCogDebugDrawImGui::AddTriangle(const ImVec2& P1, const ImVec2& P2, const I
     Triangle.Time = Time;
     Triangle.Duration = Duration;
     Triangle.FadeColor = FadeColor;
-    Triangles.Add_GetRef(Triangle);
+    Triangles.Add(Triangle);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -118,7 +119,7 @@ void FCogDebugDrawImGui::AddTriangleFilled(const ImVec2& P1, const ImVec2& P2, c
     Triangle.Time = Time;
     Triangle.Duration = Duration;
     Triangle.FadeColor = FadeColor;
-    TrianglesFilled.Add_GetRef(Triangle);
+    TrianglesFilled.Add(Triangle);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -134,7 +135,7 @@ void FCogDebugDrawImGui::AddCircle(const ImVec2& Center, float Radius, ImU32 Col
     Circle.Time = Time;
     Circle.Duration = Duration;
     Circle.FadeColor = FadeColor;
-    Circles.Add_GetRef(Circle);
+    Circles.Add(Circle);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -149,7 +150,7 @@ void FCogDebugDrawImGui::AddCircleFilled(const ImVec2& Center, float Radius, ImU
     Circle.Time = Time;
     Circle.Duration = Duration;
     Circle.FadeColor = FadeColor;
-    CirclesFilled.Add_GetRef(Circle);
+    CirclesFilled.Add(Circle);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -162,7 +163,7 @@ void FCogDebugDrawImGui::AddText(const ImVec2& Pos, const FString& Text, ImU32 C
     TextElement.Time = Time;
     TextElement.Duration = Duration;
     TextElement.FadeColor = FadeColor;
-    Texts.Add_GetRef(TextElement);
+    Texts.Add(TextElement);
 
     if (AddShadow)
     {
@@ -174,7 +175,7 @@ void FCogDebugDrawImGui::AddText(const ImVec2& Pos, const FString& Text, ImU32 C
         ShadowTextElement.Time = Time;
         ShadowTextElement.Duration = Duration;
         ShadowTextElement.FadeColor = FadeColor;
-        Texts.Add_GetRef(ShadowTextElement);
+        Texts.Add(ShadowTextElement);
     }
 }
 
@@ -194,5 +195,5 @@ void FCogDebugDrawImGui::Draw()
     DrawShapes(TrianglesFilled, [DrawList](const FTriangle& Triangle, const ImColor Color) { DrawList->AddTriangleFilled(Triangle.P1, Triangle.P2, Triangle.P3, Color); });
     DrawShapes(Circles, [DrawList](const FCircle& Circle, const ImColor Color) { DrawList->AddCircle(Circle.Center, Circle.Radius, Color, Circle.Segments, Circle.Thickness); });
     DrawShapes(CirclesFilled, [DrawList](const FCircle& Circle, const ImColor Color) { DrawList->AddCircleFilled(Circle.Center, Circle.Radius, Color, Circle.Segments); });
-    DrawShapes(Texts, [DrawList](const FText& Text, const ImColor Color) { DrawList->AddText(Text.Pos, Color, TCHAR_TO_ANSI(*Text.Text)); });
+    DrawShapes(Texts, [DrawList](const FText& Text, const ImColor Color) { DrawList->AddText(Text.Pos, Color, COG_TCHAR_TO_CHAR(*Text.Text)); });
 }

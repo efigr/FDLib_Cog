@@ -9,15 +9,14 @@
 #include "CogWindow_Spacing.h"
 #include "CogConsoleCommandManager.h"
 #include "CogDebugPluginSubsystem.h"
-#include "CogDebugSubsystem.h"
 #include "CogHelper.h"
 #include "CogWidgets.h"
 #include "Engine/Engine.h"
 #include "GameFramework/PlayerInput.h"
-#include "HAL/IConsoleManager.h"
 #include "imgui_internal.h"
 #include "Misc/CoreMisc.h"
 #include "NetImgui_Api.h"
+#include "GameFramework/PlayerController.h"
 
 FString UCogSubsystem::ToggleInputCommand   = TEXT("Cog.ToggleInput");
 FString UCogSubsystem::DisableInputCommand  = TEXT("Cog.DisableInput");
@@ -26,9 +25,28 @@ FString UCogSubsystem::SaveLayoutCommand    = TEXT("Cog.SaveLayout");
 FString UCogSubsystem::ResetLayoutCommand   = TEXT("Cog.ResetLayout");
 
 //--------------------------------------------------------------------------------------------------------------------------
-void UCogSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+bool UCogSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 {
-    Super::Initialize(Collection);
+    if (Super::ShouldCreateSubsystem(Outer) == false)
+    { return false; }
+
+#if ENABLE_COG
+    return true;
+#else
+    return false;
+#endif
+}
+
+//--------------------------------------------------------------------------------------------------------------------------
+TStatId UCogSubsystem::GetStatId() const
+{
+    RETURN_QUICK_DECLARE_CYCLE_STAT(UCogSubsystemBase, STATGROUP_Tickables);
+}
+
+//--------------------------------------------------------------------------------------------------------------------------
+void UCogSubsystem::PostInitialize()
+{
+    Super::PostInitialize();
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -40,15 +58,9 @@ void UCogSubsystem::Deinitialize()
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
-void UCogSubsystem::Activate()
-{
-    FWorldDelegates::OnWorldTickStart.AddUObject(this, &ThisClass::Tick);
-}
-
-//--------------------------------------------------------------------------------------------------------------------------
 void UCogSubsystem::TryInitialize(UWorld& World)
 {
-    if (IsInitialized)
+    if (bIsInitialized)
     { return; }
 
     FWorldContext* WorldContext = GEngine->GetWorldContextFromWorld(&World);
@@ -58,10 +70,12 @@ void UCogSubsystem::TryInitialize(UWorld& World)
     if (WorldContext->GameViewport == nullptr && IsRunningDedicatedServer() == false)
     { return; }
 
+    UE_LOG(LogCogImGui, Verbose, TEXT("UCogSubsystem::TryInitialize | World:%s %p"), *World.GetName(), &World);
+    
     Context.Initialize(WorldContext->GameViewport.Get());
 
     FCogImGuiContextScope ImGuiContextScope(Context);
-
+    
     ImGuiSettingsHandler IniHandler;
     IniHandler.TypeName = "Cog";
     IniHandler.TypeHash = ImHashStr("Cog");
@@ -72,34 +86,34 @@ void UCogSubsystem::TryInitialize(UWorld& World)
     IniHandler.WriteAllFn = SettingsHandler_WriteAll;
     IniHandler.UserData = this;
     ImGui::AddSettingsHandler(&IniHandler);
-
+    
     SpaceWindows.Add(AddWindow<FCogWindow_Spacing>("Spacing 1"));
     SpaceWindows.Add(AddWindow<FCogWindow_Spacing>("Spacing 2"));
     SpaceWindows.Add(AddWindow<FCogWindow_Spacing>("Spacing 3"));
     SpaceWindows.Add(AddWindow<FCogWindow_Spacing>("Spacing 4"));
-
-    Settings = GetConfig<UCogWindowConfig_Settings>();
-
-    UCogWindowConfig_Settings* SettingsPtr = Settings.Get();
-    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_ToggleImguiInput).BindLambda([this] () { ToggleInputMode(); });
-    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_LoadLayout1).BindLambda([this] (){ LoadLayout(1); });
-    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_LoadLayout2).BindLambda([this] (){ LoadLayout(2); });
-    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_LoadLayout3).BindLambda([this] (){ LoadLayout(3); });
-    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_LoadLayout4).BindLambda([this] (){ LoadLayout(4); });
-    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_SaveLayout1).BindLambda([this] (){ SaveLayout(1); });
-    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_SaveLayout2).BindLambda([this] (){ SaveLayout(2); });
-    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_SaveLayout3).BindLambda([this] (){ SaveLayout(3); });
-    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_SaveLayout4).BindLambda([this] (){ SaveLayout(4); });    
-    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_ResetLayout).BindLambda([this] (){ ResetLayout(); });
     
-    LayoutsWindow = AddWindow<FCogWindow_Layouts>("Window.Layouts");
-    SettingsWindow = AddWindow<FCogWindow_Settings>("Window.Settings");
+     Settings = GetConfig<UCogWindowConfig_Settings>();
+    
+    UCogWindowConfig_Settings* SettingsPtr = Settings.Get();
+    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_ToggleImguiInput, FSimpleDelegate::CreateLambda([this] () { ToggleInputMode(); }));
+    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_LoadLayout1,      FSimpleDelegate::CreateLambda([this] () { LoadLayout(1); }));
+    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_LoadLayout2,      FSimpleDelegate::CreateLambda([this] () { LoadLayout(2); }));
+    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_LoadLayout3,      FSimpleDelegate::CreateLambda([this] () { LoadLayout(3); }));
+    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_LoadLayout4,      FSimpleDelegate::CreateLambda([this] () { LoadLayout(4); }));
+    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_SaveLayout1,      FSimpleDelegate::CreateLambda([this] () { SaveLayout(1); }));
+    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_SaveLayout2,      FSimpleDelegate::CreateLambda([this] () { SaveLayout(2); }));
+    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_SaveLayout3,      FSimpleDelegate::CreateLambda([this] () { SaveLayout(3); }));
+    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_SaveLayout4,      FSimpleDelegate::CreateLambda([this] () { SaveLayout(4); }));
+    AddShortcut(SettingsPtr, &UCogWindowConfig_Settings::Shortcut_ResetLayout,      FSimpleDelegate::CreateLambda([this] () { ResetLayout(); }));
+    
+     LayoutsWindow = AddWindow<FCogWindow_Layouts>("Window.Layouts");
+     SettingsWindow = AddWindow<FCogWindow_Settings>("Window.Settings");
 
     for (FCogWindow* Window : Windows)
     {
         InitializeWindow(Window);   
     }
-
+    
     FCogConsoleCommandManager::RegisterWorldConsoleCommand(
         *ToggleInputCommand, 
         TEXT("Toggle the input focus between the Game and ImGui"),
@@ -108,7 +122,7 @@ void UCogSubsystem::TryInitialize(UWorld& World)
         {
             ToggleInputMode();
         }));
-
+    
     FCogConsoleCommandManager::RegisterWorldConsoleCommand(
         *DisableInputCommand,
         TEXT("Disable ImGui input"), 
@@ -117,7 +131,7 @@ void UCogSubsystem::TryInitialize(UWorld& World)
         {
             DisableInputMode();
         }));
-
+    
     FCogConsoleCommandManager::RegisterWorldConsoleCommand(
         *ResetLayoutCommand,
         TEXT("Reset the layout."),
@@ -129,7 +143,7 @@ void UCogSubsystem::TryInitialize(UWorld& World)
                 ResetLayout();
             }
         }));
-
+    
     FCogConsoleCommandManager::RegisterWorldConsoleCommand(
         *LoadLayoutCommand,
         TEXT("Load the layout. Cog.LoadLayout <Index>"),
@@ -141,7 +155,7 @@ void UCogSubsystem::TryInitialize(UWorld& World)
                 LoadLayout(FCString::Atoi(*InArgs[0]));
             }
         }));
-
+    
     FCogConsoleCommandManager::RegisterWorldConsoleCommand(
         *SaveLayoutCommand,
         TEXT("Save the layout. Cog.SaveLayout <Index>"),
@@ -155,7 +169,7 @@ void UCogSubsystem::TryInitialize(UWorld& World)
         }));
 
 
-    IsInitialized = true;
+    bIsInitialized = true;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -163,14 +177,9 @@ void UCogSubsystem::Shutdown()
 {
     FCogImGuiContextScope ImGuiContextScope(Context);
 
-    //------------------------------------------------------------------
-    // Destroy ImGui before destroying the windows to make sure 
-    // imgui serialize their visibility state in imgui.ini
-    // It also save the Cog Settings, so they are saved regularly.
-    //------------------------------------------------------------------
-    if (IsInitialized)
+    if (bIsInitialized)
     {
-        Context.Shutdown();
+        Context.SaveSettings();
     }
     
     for (FCogWindow* Window : Windows)
@@ -180,9 +189,15 @@ void UCogSubsystem::Shutdown()
     }
     Windows.Empty();
 
-    FCogConsoleCommandManager::UnregisterAllWorldConsoleCommands(GetWorld());
+    if (bIsInitialized)
+    {
+        // Prevent ImGuiContextScope to contain dangling pointers when the contexts get destroyed.
+        ImGuiContextScope.ClearPreviousContexts();
 
-    FWorldDelegates::OnWorldTickStart.RemoveAll(this);
+        Context.Shutdown();
+    }
+    
+    FCogConsoleCommandManager::UnregisterAllWorldConsoleCommands(GetWorld());
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -213,18 +228,12 @@ void UCogSubsystem::ReloadAllSettings()
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
-void UCogSubsystem::Tick(UWorld* InTickedWorld, ELevelTick InTickType, float InDeltaTime)
+void UCogSubsystem::Tick(float InDeltaTime)
 {
     UWorld* World = GetWorld();
 
-    //----------------------------------------------------------------------------------------------
-    // The tick currently gets called from a static tick function, which tick for all PIEInstance worlds.
-    // We must not tick for a different world than ours.
-    // TODO: Find a better way to tick the subsystem only for our world.
-    //----------------------------------------------------------------------------------------------
-    if (World != InTickedWorld)
-    { return; }
-    
+    const float RealDeltaTime = World->DeltaRealTimeSeconds;
+
     //----------------------------------------------------------------------------------------------
     // When changing world the DebugExecBindings can change. 
     //----------------------------------------------------------------------------------------------
@@ -236,8 +245,8 @@ void UCogSubsystem::Tick(UWorld* InTickedWorld, ELevelTick InTickType, float InD
     
     if (World == nullptr)
     { return; }
-
-    if (IsInitialized == false)
+    
+    if (bIsInitialized == false)
     {
         TryInitialize(*World);
         return;
@@ -262,21 +271,21 @@ void UCogSubsystem::Tick(UWorld* InTickedWorld, ELevelTick InTickType, float InD
     if (LayoutToLoad != -1)
     {
 	    const FString Filename = FCogImguiHelper::GetIniFilePath(FString::Printf(TEXT("ImGui_Layout_%d"), LayoutToLoad));
-        ImGui::LoadIniSettingsFromDisk(TCHAR_TO_ANSI(*Filename));
+        ImGui::LoadIniSettingsFromDisk(COG_TCHAR_TO_CHAR(*Filename));
         LayoutToLoad = -1;
     }
 
     for (FCogWindow* Window : Windows)
     {
-        Window->GameTick(InDeltaTime);
+        Window->GameTick(RealDeltaTime);
     }
 
     const bool ShouldSkipRendering = NetImgui::IsConnected() && bIsSelectionModeActive == false;
     Context.SetSkipRendering(ShouldSkipRendering);
 
-    if (Context.BeginFrame(InDeltaTime))
+    if (Context.BeginFrame(RealDeltaTime))
     {
-        Render(InDeltaTime);
+        Render(RealDeltaTime);
         Context.EndFrame();
     }
 }
@@ -316,11 +325,6 @@ void UCogSubsystem::SetLocalPlayerController(APlayerController& PlayerController
 //--------------------------------------------------------------------------------------------------------------------------
 void UCogSubsystem::UpdatePlayerControllers(UWorld& World)
 {
-    if (APlayerController* PlayerController = GetGameInstance()->GetFirstLocalPlayerController())
-    {
-        SetLocalPlayerController(*PlayerController);
-    }
-    
     TArray<UCogDebugPluginSubsystem*> PluginSubsystems;
 
     ServerPlayerControllers.RemoveAll([] (TWeakObjectPtr<APlayerController> PlayerController)
@@ -331,8 +335,13 @@ void UCogSubsystem::UpdatePlayerControllers(UWorld& World)
     for (FConstPlayerControllerIterator It = World.GetPlayerControllerIterator(); It; ++It)
     {
         APlayerController* PlayerController = It->Get();
-        if (PlayerController == nullptr)
+        if (IsValid(PlayerController) == false)
         { continue; }
+
+        if (PlayerController->IsLocalController())
+        {
+            SetLocalPlayerController(*PlayerController);
+        }
 
         if (World.GetNetMode() != NM_Client)
         {
@@ -343,7 +352,7 @@ void UCogSubsystem::UpdatePlayerControllers(UWorld& World)
         
             if (PluginSubsystems.IsEmpty())
             {
-                PluginSubsystems = GetOuterUGameInstance()->GetSubsystemArrayCopy<UCogDebugPluginSubsystem>();
+                PluginSubsystems = World.GetGameInstance()->GetSubsystemArrayCopy<UCogDebugPluginSubsystem>();
             }
         
             for (UCogDebugPluginSubsystem* PluginSubsystem : PluginSubsystems)
@@ -460,7 +469,7 @@ void UCogSubsystem::ResetLayout()
 
     for (const FCogWindow* Window : Windows)
     {
-        ImGui::SetWindowPos(TCHAR_TO_ANSI(*Window->GetName()), ImVec2(10, 10), ImGuiCond_Always);
+        ImGui::SetWindowPos(COG_TCHAR_TO_CHAR(*Window->GetName()), ImVec2(10, 10), ImGuiCond_Always);
     }
 
     ImGui::ClearIniSettings();
@@ -492,7 +501,7 @@ void UCogSubsystem::SaveLayout(const int32 LayoutIndex)
     FCogImGuiContextScope ImGuiContextScope(Context);
 
 	const FString Filename = *FCogImguiHelper::GetIniFilePath(FString::Printf(TEXT("imgui_layout_%d"), LayoutIndex));
-    ImGui::SaveIniSettingsToDisk(TCHAR_TO_ANSI(*Filename));
+    ImGui::SaveIniSettingsToDisk(COG_TCHAR_TO_CHAR(*Filename));
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -541,7 +550,7 @@ UCogSubsystem::FMenu* UCogSubsystem::AddMenu(const FString& Name)
 //--------------------------------------------------------------------------------------------------------------------------
 void UCogSubsystem::RenderMainMenu()
 {
-    IsRenderingInMainMenu = true;
+    bIsRenderingInMainMenu = true;
 
     //-----------------------------------------------------------------------------------------------
     // Prevent having a small gap on the right of the main menu, where some widgets are displayed
@@ -576,7 +585,7 @@ void UCogSubsystem::RenderMainMenu()
                 for (FCogWindow* SpaceWindow : SpaceWindows)
                 {
                     bool bSpaceVisible = SpaceWindow->GetIsVisible();
-                    if (ImGui::MenuItem(TCHAR_TO_ANSI(*SpaceWindow->GetName()), nullptr, &bSpaceVisible))
+                    if (ImGui::MenuItem(COG_TCHAR_TO_CHAR(*SpaceWindow->GetName()), nullptr, &bSpaceVisible))
                     {
                         SpaceWindow->SetIsVisible(bSpaceVisible);
                     }
@@ -591,7 +600,7 @@ void UCogSubsystem::RenderMainMenu()
         ImGui::EndMainMenuBar();
     }    
     
-    IsRenderingInMainMenu = false;
+    bIsRenderingInMainMenu = false;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -706,11 +715,11 @@ void UCogSubsystem::RenderOptionMenu(FMenu& Menu)
 {
     if (Menu.Window != nullptr)
     {
-        RenderMenuItem(*Menu.Window, TCHAR_TO_ANSI(*Menu.Name));
+        RenderMenuItem(*Menu.Window, COG_TCHAR_TO_CHAR(*Menu.Name));
     }
     else
     {
-        if (ImGui::BeginMenu(TCHAR_TO_ANSI(*Menu.Name)))
+        if (ImGui::BeginMenu(COG_TCHAR_TO_CHAR(*Menu.Name)))
         {
             for (FMenu& SubMenu : Menu.SubMenus)
             {
@@ -830,7 +839,7 @@ void UCogSubsystem::SettingsHandler_ReadLine(ImGuiContext* Context, ImGuiSetting
     if (Entry == reinterpret_cast<void*>(1))
     {
         ImGuiID Id;
-        int32 ShowMenu;
+        int32 ShowMenu = 0;
 #if PLATFORM_WINDOWS || PLATFORM_MICROSOFT
         if (sscanf_s(Line, "0x%08X %d", &Id, &ShowMenu) == 2)
 #else
@@ -875,7 +884,6 @@ void UCogSubsystem::SettingsHandler_WriteAll(ImGuiContext* Context, ImGuiSetting
 {
     UCogSubsystem* CogSubsystem = static_cast<UCogSubsystem*>(Handler->UserData);
 
-    
     CogSubsystem->SaveAllSettings();
 
     //-----------------------------------------------------------------------------------
@@ -1043,12 +1051,12 @@ bool UCogSubsystem::GetActivateSelectionMode() const
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
-FInputActionHandlerSignature& UCogSubsystem::AddShortcut(const UObject& InInstance, const FProperty& InProperty)
+void UCogSubsystem::AddShortcut(const UObject& InInstance, const FProperty& InProperty, const FSimpleDelegate& Delegate)
 {
     FCogShortcut& Shortcut = Shortcuts.AddDefaulted_GetRef();
     Shortcut.PropertyName = InProperty.GetFName();
     Shortcut.Config = &InInstance;
-    return Shortcut.Delegate;
+    Shortcut.Delegate = Delegate;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -1062,12 +1070,22 @@ bool UCogSubsystem::BindShortcut(FCogShortcut& InShortcut) const
     if (StructProperty == nullptr)
     { return false; }
 
-    const FInputChord* InputChord = static_cast<FInputChord*>(StructProperty->ContainerPtrToValuePtr<void>(Config));
+    const FCogInputChord* InputChord = static_cast<FCogInputChord*>(StructProperty->ContainerPtrToValuePtr<void>(Config));
     if (InputChord == nullptr)
     { return false; }
         
     FInputKeyBinding InputBinding(*InputChord, IE_Pressed);
-    InputBinding.KeyDelegate.GetDelegateForManualSet() = InShortcut.Delegate;
+
+    InputBinding.KeyDelegate.GetDelegateForManualSet() = FInputActionHandlerSignature::CreateLambda([this, &InShortcut]()
+        {
+            FCogImGuiContextScope ImGuiContextScope(Context);
+
+            if (ImGui::GetIO().WantTextInput == false || InShortcut.InputChord.bTriggerWhenImguiWantTextInput)
+            {
+                InShortcut.Delegate.ExecuteIfBound();
+            }
+        });
+
 
     if (UInputComponent* InputComponentPtr = InputComponent.Get())
     {
@@ -1076,7 +1094,7 @@ bool UCogSubsystem::BindShortcut(FCogShortcut& InShortcut) const
     
     InShortcut.InputChord = *InputChord;
 
-    FCogImguiInputHelper::GetPrioritizedShortcuts().Add(*InputChord);
+    FCogImguiInputHelper::GetPrioritizedShortcuts().AddUnique(*InputChord);
     return true;
 }
 
@@ -1115,7 +1133,7 @@ void UCogSubsystem::TryDisableCommandsConflictingWithShortcuts(UPlayerInput* Pla
     if (Settings->bDisableConflictingCommands == false)
     { return; }
     
-    TArray<FInputChord>& PrioritizedShortcuts = FCogImguiInputHelper::GetPrioritizedShortcuts();
+    TArray<FCogInputChord>& PrioritizedShortcuts = FCogImguiInputHelper::GetPrioritizedShortcuts();
     for (const FCogShortcut& Shortcut : Shortcuts)
     {
         PrioritizedShortcuts.Add(Shortcut.InputChord);

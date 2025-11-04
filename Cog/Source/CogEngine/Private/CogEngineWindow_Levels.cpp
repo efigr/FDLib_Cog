@@ -3,6 +3,8 @@
 #include "CogImguiHelper.h"
 #include "CogWidgets.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Engine/World.h"
+#include "GameFramework/PlayerController.h"
 
 //--------------------------------------------------------------------------------------------------------------------------
 void FCogEngineWindow_Levels::RenderHelp()
@@ -149,7 +151,7 @@ void FCogEngineWindow_Levels::RenderLevel(int32 InIndex, const FAssetData& InAss
         }
     }
 
-    ImGui::SetItemTooltip(StringCast<ANSICHAR>(*InAsset.PackageName.ToString()).Get());
+    ImGui::SetItemTooltip("%s", StringCast<ANSICHAR>(*InAsset.PackageName.ToString()).Get());
 
     RenderLevelContextMenu(InIndex, InAsset);
 }

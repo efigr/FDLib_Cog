@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CogCommon.h"
 #include "CogCommonLog.generated.h"
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -25,10 +26,10 @@ struct COGCOMMON_API FCogLogCategory
 
     FCogLogCategory() {}
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cog")
     FName Name;
 
     FString GetName() const { return Name.ToString(); }
 
-    mutable FLogCategoryBase* LogCategory = nullptr;
+    mutable FCogLogCategoryAlias* LogCategory = nullptr;
 };

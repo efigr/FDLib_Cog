@@ -7,6 +7,7 @@
 #include "UObject/ReflectedTypeAccessors.h"
 #include "UObject/WeakObjectPtrTemplates.h"
 
+class UInputComponent;
 struct FCogDebugContext;
 class AActor;
 class APawn;
@@ -114,8 +115,6 @@ protected:
     virtual void RenderContextMenu();
 
     virtual void OnWindowVisibilityChanged(bool NewVisibility) { }
-
-    virtual void OnSelectionChanged(AActor* OldSelection, AActor* NewSelection) {}
 
     virtual bool IsWindowRenderedInMainMenu();
 
