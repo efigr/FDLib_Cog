@@ -6,7 +6,7 @@
 #include "CogLocalizationConfig.h"
 
 #ifndef ENABLE_COG
-#define ENABLE_COG 1
+#define ENABLE_COG !UE_BUILD_SHIPPING
 #endif
 
 #if ENABLE_COG

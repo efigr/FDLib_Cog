@@ -75,13 +75,13 @@ class UCogInputConfig_Gamepad : public UCogCommonConfig
 public:
 
     UPROPERTY(Config)
-    bool bShowAsOverlay = true;
+    bool bShowAsOverlay = false;
 
     UPROPERTY(Config)
-    bool bLockPosition = true;
+    bool bLockPosition = false;
 
     UPROPERTY(Config)
-    FVector2f Alignment = FVector2f(1.0f, 1.0f);
+    FVector2f Alignment = FVector2f(0.0f, 0.0f);
 
     UPROPERTY(Config)
     FIntVector2 Padding = FIntVector2(10, 10);

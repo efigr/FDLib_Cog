@@ -14,6 +14,7 @@ void FCogEngineWindow_Skeleton::Initialize()
     Super::Initialize();
 
     bHasMenu = true;
+    bUseCustomContextMenu = true;
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
